@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Capteurs de Données</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Données du Capteur</h1>
+    <div>
+        <canvas id="bpmChart"></canvas>
+        <canvas id="speedChart"></canvas>
+    </div>
+
+    <script>
+        const bpmContext = document.getElementById('bpmChart').getContext('2d');
+        const speedContext = document.getElementById('speedChart').getContext('2d');
+
+        let bpmChart = new Chart(bpmContext, {
+            type: 'line',
+            data: {
+                labels: [], // Les timestamps pour BPM
+                datasets: [{
+                    label: 'BPM',
+                    data: [], // Les données BPM
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+
+        let speedChart = new Chart(speedContext, {
+            type: 'line',
+            data: {
+                labels: [], // Les timestamps
+                datasets: [{
+                    label: 'Vitesse (m/s)',
+                    data: [], // Les données de vitesse
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y-axis-speed'
+                }, {
+                    label: 'Altitude',
+                    data: [], // Les données d'altitude
+                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y-axis-altitude'
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        id: 'y-axis-speed',
+                        type: 'linear',
+                        position: 'left',
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }, {
+                        id: 'y-axis-altitude',
+                        type: 'linear',
+                        position: 'right',
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+
+        const fetchSensorData = () => {
+            fetch('/data')
+                .then(response => response.json())
+                .then(data => {
+                    updateBPMChart(data.bpmData);
+                    updateSpeedChart(data.speedData, data.altitudeData);
+                })
+                .catch(error => console.error('Error:', error));
+        };
+
+        const updateBPMChart = (bpmData) => {
+            bpmChart.data.labels.push(new Date().toLocaleTimeString());
+            bpmChart.data.datasets.forEach((dataset) => {
+                dataset.data.push(bpmData[bpmData.length - 1]);
+            });
+            bpmChart.update();
+        };
+
+        const updateSpeedChart = (speedData, altitudeData) => {
+            speedChart.data.labels.push(new Date().toLocaleTimeString());
+            speedChart.data.datasets[0].data.push(speedData[speedData.length - 1]); // Vitesse
+            speedChart.data.datasets[1].data.push(altitudeData[altitudeData.length - 1]); // Altitude
+            speedChart.update();
+        };
+
+        fetchSensorData();
+        setInterval(fetchSensorData, 60000);
+    </script>
+</body>
+</html>
